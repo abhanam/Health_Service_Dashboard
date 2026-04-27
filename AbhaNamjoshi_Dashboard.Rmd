@@ -181,6 +181,50 @@ plot_ly(data = plot_data,
 Row {data-height=500}
 -----------------------------------------------------------------------
 
+### Service Utilization by Age Group - PH Monthly vs Health Promotion
+
+```{r}
+age_comparison_data <- data.frame(
+  Service = rep(c("PH Monthly", "Health Promotion"), each = 4),
+  Age_Group = rep(c("0-18", "19-49", "50-65", "65+"), 2),
+  Total = c(ph_age_0_18, ph_age_19_49, ph_age_50_65, ph_age_65_plus,
+            hp_age_0_18, hp_age_19_49, hp_age_50_65, hp_age_65_plus)
+) %>%
+  mutate(Age_Group = factor(Age_Group, levels = c("0-18", "19-49", "50-65", "65+")))
+
+plot_ly(data = age_comparison_data,
+        x = ~Age_Group,
+        y = ~Total,
+        color = ~Service,
+        colors = c("PH Monthly" = "#FF8C00", "Health Promotion" = "#7B3F8C"),
+        type = 'bar',
+        hovertemplate = paste(
+          '<b>%{fullData.name}</b><br>',
+          'Age Group: %{x}<br>',
+          'Total: %{y:,.0f}<br>',
+          '<extra></extra>'
+        )) %>%
+  layout(
+    xaxis = list(
+      title = list(text = "<b>Age group (years)</b>", font = list(size = 16)),
+      tickfont = list(size = 14),
+      tickangle = 0
+    ),
+    yaxis = list(
+      title = list(text = "<b>Total sessions</b>", font = list(size = 16)),
+      tickfont = list(size = 14)
+    ),
+    barmode = 'group',
+    legend = list(
+      title = list(text = "<b>Service Type</b>", font = list(size = 14)),
+      font = list(size = 13)
+    ),
+    font = list(family = "Segoe UI, Roboto, sans-serif")
+  ) %>%
+  config(doubleClick = 'reset')
+```
+
+
 ### Service Utilization by Sex - PH Monthly vs Health Promotion
 
 ```{r}
@@ -227,48 +271,6 @@ plot_ly(data = sex_comparison_data,
   config(doubleClick = 'reset')
 ```
 
-### Service Utilization by Age Group - PH Monthly vs Health Promotion
-
-```{r}
-age_comparison_data <- data.frame(
-  Service = rep(c("PH Monthly", "Health Promotion"), each = 4),
-  Age_Group = rep(c("0-18 years", "19-49 years", "50-65 years", "65+ years"), 2),
-  Total = c(ph_age_0_18, ph_age_19_49, ph_age_50_65, ph_age_65_plus,
-            hp_age_0_18, hp_age_19_49, hp_age_50_65, hp_age_65_plus)
-) %>%
-  mutate(Age_Group = factor(Age_Group, levels = c("0-18 years", "19-49 years", "50-65 years", "65+ years")))
-
-plot_ly(data = age_comparison_data,
-        x = ~Age_Group,
-        y = ~Total,
-        color = ~Service,
-        colors = c("PH Monthly" = "#FF8C00", "Health Promotion" = "#7B3F8C"),
-        type = 'bar',
-        hovertemplate = paste(
-          '<b>%{fullData.name}</b><br>',
-          'Age Group: %{x}<br>',
-          'Total: %{y:,.0f}<br>',
-          '<extra></extra>'
-        )) %>%
-  layout(
-    xaxis = list(
-      title = list(text = "<b>Age group</b>", font = list(size = 16)),
-      tickfont = list(size = 14),
-      tickangle = 0
-    ),
-    yaxis = list(
-      title = list(text = "<b>Total sessions</b>", font = list(size = 16)),
-      tickfont = list(size = 14)
-    ),
-    barmode = 'group',
-    legend = list(
-      title = list(text = "<b>Service Type</b>", font = list(size = 14)),
-      font = list(size = 13)
-    ),
-    font = list(family = "Segoe UI, Roboto, sans-serif")
-  ) %>%
-  config(doubleClick = 'reset')
-```
 
 Key Findings {data-icon="fa-lightbulb"}
 =======================================================================
