@@ -1,0 +1,319 @@
+---
+title: "<span style='font-size: 28px; font-weight: bold;'>Gaza Health Service Utilization Dashboard</span>"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: fill
+    source_code: embed
+    navbar:
+      - { title: "Analyzing health service utilization patterns at CARE's Deir Al-Balah PHCC in Gaza (2025)", align: left }
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+library(plotly)
+library(readxl)
+
+# Set working directory
+setwd("C:/Users/abhan/Work/Spring_2026/Capstone/Datasets/Clean_analysis/Data")
+
+# Load master data
+master_clean_data <- read.csv("master_clean_data.csv")
+
+# Ensure Month is ordered
+master_clean_data <- master_clean_data %>%
+  mutate(
+    Month = factor(Month, levels = c("January", "February", "March", "April", 
+                                     "May", "June", "July", "August", 
+                                     "September", "October", "November", "December"))
+  )
+
+# Month names
+months <- c("January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December")
+
+# ===== EXTRACT AGE & SEX DATA FOR PH MONTHLY =====
+ph_age_sex_data <- data.frame()
+
+for(i in 1:12) {
+  sheet_data <- read_excel("02_PH_Monthly_Report_Cleaned.xlsx", sheet = i + 1)
+  
+  grand_total_row <- which(sheet_data[[1]] == "Grand Total Consultations" | 
+                             sheet_data[[2]] == "Grand Total Consultations" |
+                             sheet_data[[3]] == "Grand Total Consultations")
+  
+  if(length(grand_total_row) > 0) {
+    row_data <- sheet_data[grand_total_row[1], ]
+    
+    month_data <- data.frame(
+      Month = months[i],
+      Age_0_18_Male = sum(as.numeric(row_data[[3]]), as.numeric(row_data[[5]]), 
+                          as.numeric(row_data[[7]]), na.rm = TRUE),
+      Age_0_18_Female = sum(as.numeric(row_data[[4]]), as.numeric(row_data[[6]]), 
+                            as.numeric(row_data[[8]]), na.rm = TRUE),
+      Age_19_49_Male = as.numeric(row_data[[9]]),
+      Age_19_49_Female = as.numeric(row_data[[10]]),
+      Age_50_65_Male = as.numeric(row_data[[11]]),
+      Age_50_65_Female = as.numeric(row_data[[12]]),
+      Age_65_plus_Male = as.numeric(row_data[[13]]),
+      Age_65_plus_Female = as.numeric(row_data[[14]])
+    )
+    
+    ph_age_sex_data <- rbind(ph_age_sex_data, month_data)
+  }
+}
+
+# ===== EXTRACT AGE & SEX DATA FOR HEALTH PROMOTION =====
+hp_full <- read_excel("04_cleaned_Health_Promotion_Activities.xlsx",
+                      sheet = 2,
+                      col_names = FALSE)
+
+hp_age_sex_data <- data.frame()
+
+for(i in 1:12) {
+  row_num <- i + 4
+  
+  month_data <- data.frame(
+    Month = months[i],
+    Age_0_18_Male = sum(as.numeric(hp_full[[4]][row_num]),
+                        as.numeric(hp_full[[7]][row_num]),
+                        as.numeric(hp_full[[10]][row_num]),
+                        na.rm = TRUE),
+    Age_0_18_Female = sum(as.numeric(hp_full[[5]][row_num]),
+                          as.numeric(hp_full[[8]][row_num]),
+                          as.numeric(hp_full[[11]][row_num]),
+                          na.rm = TRUE),
+    Age_19_49_Male = as.numeric(hp_full[[13]][row_num]),
+    Age_19_49_Female = as.numeric(hp_full[[14]][row_num]),
+    Age_50_65_Male = as.numeric(hp_full[[16]][row_num]),
+    Age_50_65_Female = as.numeric(hp_full[[17]][row_num]),
+    Age_65_plus_Male = as.numeric(hp_full[[19]][row_num]),
+    Age_65_plus_Female = as.numeric(hp_full[[20]][row_num])
+  )
+  
+  hp_age_sex_data <- rbind(hp_age_sex_data, month_data)
+}
+
+# ===== CALCULATE TOTALS =====
+ph_sex_male <- sum(ph_age_sex_data$Age_0_18_Male + ph_age_sex_data$Age_19_49_Male + 
+                   ph_age_sex_data$Age_50_65_Male + ph_age_sex_data$Age_65_plus_Male, na.rm = TRUE)
+ph_sex_female <- sum(ph_age_sex_data$Age_0_18_Female + ph_age_sex_data$Age_19_49_Female + 
+                     ph_age_sex_data$Age_50_65_Female + ph_age_sex_data$Age_65_plus_Female, na.rm = TRUE)
+
+hp_sex_male <- sum(hp_age_sex_data$Age_0_18_Male + hp_age_sex_data$Age_19_49_Male + 
+                   hp_age_sex_data$Age_50_65_Male + hp_age_sex_data$Age_65_plus_Male, na.rm = TRUE)
+hp_sex_female <- sum(hp_age_sex_data$Age_0_18_Female + hp_age_sex_data$Age_19_49_Female + 
+                     hp_age_sex_data$Age_50_65_Female + hp_age_sex_data$Age_65_plus_Female, na.rm = TRUE)
+
+ph_age_0_18 <- sum(ph_age_sex_data$Age_0_18_Male + ph_age_sex_data$Age_0_18_Female, na.rm = TRUE)
+ph_age_19_49 <- sum(ph_age_sex_data$Age_19_49_Male + ph_age_sex_data$Age_19_49_Female, na.rm = TRUE)
+ph_age_50_65 <- sum(ph_age_sex_data$Age_50_65_Male + ph_age_sex_data$Age_50_65_Female, na.rm = TRUE)
+ph_age_65_plus <- sum(ph_age_sex_data$Age_65_plus_Male + ph_age_sex_data$Age_65_plus_Female, na.rm = TRUE)
+
+hp_age_0_18 <- sum(hp_age_sex_data$Age_0_18_Male + hp_age_sex_data$Age_0_18_Female, na.rm = TRUE)
+hp_age_19_49 <- sum(hp_age_sex_data$Age_19_49_Male + hp_age_sex_data$Age_19_49_Female, na.rm = TRUE)
+hp_age_50_65 <- sum(hp_age_sex_data$Age_50_65_Male + hp_age_sex_data$Age_50_65_Female, na.rm = TRUE)
+hp_age_65_plus <- sum(hp_age_sex_data$Age_65_plus_Male + hp_age_sex_data$Age_65_plus_Female, na.rm = TRUE)
+```
+
+Dashboard {data-icon="fa-chart-line"}
+=======================================================================
+
+Row {data-height=500}
+-----------------------------------------------------------------------
+
+### Monthly Service Utilization Trends - Deir Al-Balah PHCC, 2025
+
+```{r}
+plot_data <- master_clean_data %>%
+  select(Month, Primary_Health_Activity, Psychosocial, Health_Promotion, Nutrition) %>%
+  pivot_longer(cols = c(Primary_Health_Activity, Psychosocial, Health_Promotion, Nutrition),
+               names_to = "Service_Type",
+               values_to = "Utilization") %>%
+  mutate(
+    Service_Label = case_when(
+      Service_Type == "Primary_Health_Activity" ~ "PH Monthly",
+      Service_Type == "Psychosocial" ~ "Psychosocial Support",
+      Service_Type == "Health_Promotion" ~ "Health Promotion",
+      Service_Type == "Nutrition" ~ "Nutrition"
+    )
+  )
+
+plot_ly(data = plot_data,
+        x = ~Month,
+        y = ~Utilization,
+        color = ~Service_Label,
+        colors = c("PH Monthly" = "#FF8C00",
+                  "Psychosocial Support" = "#2E3A59",
+                  "Health Promotion" = "#7B3F8C",
+                  "Nutrition" = "#C17BA3"),
+        type = 'scatter',
+        mode = 'lines+markers',
+        line = list(width = 3),
+        marker = list(size = 8),
+        hovertemplate = paste(
+          '<b>%{fullData.name}</b><br>',
+          'Month: %{x}<br>',
+          'Encounters: %{y:,.0f}<br>',
+          '<extra></extra>'
+        )) %>%
+  layout(
+    xaxis = list(
+      title = list(text = "<b>Month</b>", font = list(size = 16)),
+      tickfont = list(size = 14),
+      tickangle = 0
+    ),
+    yaxis = list(
+      title = list(text = "<b>Number of sessions</b>", font = list(size = 16)),
+      tickfont = list(size = 14)
+    ),
+    hovermode = 'closest',
+    legend = list(
+      title = list(text = "<b>Service Type</b>", font = list(size = 14)),
+      font = list(size = 13)
+    ),
+    font = list(family = "Segoe UI, Roboto, sans-serif")
+  ) %>%
+  config(doubleClick = 'reset')
+```
+
+Row {data-height=500}
+-----------------------------------------------------------------------
+
+### Service Utilization by Sex - PH Monthly vs Health Promotion
+
+```{r}
+sex_comparison_data <- data.frame(
+  Service = rep(c("PH Monthly", "Health Promotion"), each = 2),
+  Sex = rep(c("Male", "Female"), 2),
+  Total = c(ph_sex_male, ph_sex_female, hp_sex_male, hp_sex_female)
+) %>%
+  group_by(Service) %>%
+  mutate(Percentage = round((Total / sum(Total)) * 100, 1)) %>%
+  ungroup()
+
+plot_ly(data = sex_comparison_data,
+        x = ~Service,
+        y = ~Total,
+        color = ~Sex,
+        colors = c("Male" = "#2E3A59", "Female" = "#FF8C00"),
+        type = 'bar',
+        hovertemplate = paste(
+          '<b>%{fullData.name}</b><br>',
+          'Service: %{x}<br>',
+          'Total Encounters: %{y:,.0f}<br>',
+          'Percentage: %{customdata}%<br>',
+          '<extra></extra>'
+        ),
+        customdata = ~Percentage) %>%
+  layout(
+    xaxis = list(
+      title = list(text = "<b>Service type</b>", font = list(size = 16)),
+      tickfont = list(size = 14),
+      tickangle = 0
+    ),
+    yaxis = list(
+      title = list(text = "<b>Total sessions</b>", font = list(size = 16)),
+      tickfont = list(size = 14)
+    ),
+    barmode = 'group',
+    legend = list(
+      title = list(text = "<b>Sex</b>", font = list(size = 14)),
+      font = list(size = 13)
+    ),
+    font = list(family = "Segoe UI, Roboto, sans-serif")
+  ) %>%
+  config(doubleClick = 'reset')
+```
+
+### Service Utilization by Age Group - PH Monthly vs Health Promotion
+
+```{r}
+age_comparison_data <- data.frame(
+  Service = rep(c("PH Monthly", "Health Promotion"), each = 4),
+  Age_Group = rep(c("0-18 years", "19-49 years", "50-65 years", "65+ years"), 2),
+  Total = c(ph_age_0_18, ph_age_19_49, ph_age_50_65, ph_age_65_plus,
+            hp_age_0_18, hp_age_19_49, hp_age_50_65, hp_age_65_plus)
+) %>%
+  mutate(Age_Group = factor(Age_Group, levels = c("0-18 years", "19-49 years", "50-65 years", "65+ years")))
+
+plot_ly(data = age_comparison_data,
+        x = ~Age_Group,
+        y = ~Total,
+        color = ~Service,
+        colors = c("PH Monthly" = "#FF8C00", "Health Promotion" = "#7B3F8C"),
+        type = 'bar',
+        hovertemplate = paste(
+          '<b>%{fullData.name}</b><br>',
+          'Age Group: %{x}<br>',
+          'Total: %{y:,.0f}<br>',
+          '<extra></extra>'
+        )) %>%
+  layout(
+    xaxis = list(
+      title = list(text = "<b>Age group</b>", font = list(size = 16)),
+      tickfont = list(size = 14),
+      tickangle = 0
+    ),
+    yaxis = list(
+      title = list(text = "<b>Total sessions</b>", font = list(size = 16)),
+      tickfont = list(size = 14)
+    ),
+    barmode = 'group',
+    legend = list(
+      title = list(text = "<b>Service Type</b>", font = list(size = 14)),
+      font = list(size = 13)
+    ),
+    font = list(family = "Segoe UI, Roboto, sans-serif")
+  ) %>%
+  config(doubleClick = 'reset')
+```
+
+Key Findings {data-icon="fa-lightbulb"}
+=======================================================================
+
+### Analysis Summary
+
+**About This Dashboard:**
+
+This dashboard analyzes 147,430 health service encounters at CARE International's Deir Al-Balah Primary Health Care Center in Gaza during 2025 to identify healthcare access patterns and service gaps during active conflict conditions.
+
+---
+
+**Key Findings:**
+
+Health promotion activities accounted for the largest share of service utilization (43%), while psychosocial support services had the lowest share (8%). The higher utilization of health promotion services compared to PH Monthly reflects the critical role of preventive care during active conflict, when maintaining population health through education and prevention becomes essential. Age-stratified analysis of PH Monthly and Health Promotion data revealed highest utilization among the 19-49 age group, with 48% uptake in PH Monthly activities and 79% in health promotion services. Sex-stratified analysis of PH Monthly and Health Promotion data showed women comprised 60% of PH Monthly participants and 68% of health promotion service users, reflecting gender differences in healthcare-seeking behavior and service availability for pregnant and lactating women.
+
+Psychosocial services showed persistently low utilization due to service disruptions, limited resources, and clinic closures during conflict. Data unavailability for October-December further contributed to lower overall utilization, highlighting ongoing unmet mental health needs in Gaza.
+
+**Recommendations:**
+
+**Short-term:** Maintain continuity of highly utilized services (health promotion and PH Monthly activities) while using these platforms to integrate additional support and improve engagement among underserved groups (men, older adults) through targeted outreach.
+
+**Long-term:** Strengthen data collection and reporting systems to ensure complete and consistent data across all services and months. Improve coordination across different service types and ensure essential services can continue even during periods of conflict.
+
+**Limitations:**
+
+This analysis has several data quality constraints. Psychosocial support data was unavailable for October through December 2025 due to service disruptions during conflict. Additionally, coding inconsistencies were identified in nutrition data where the 19-49 age group was categorized as pregnant and lactating women instead of the standard male/female classification used across all other age groups and services. These inconsistencies limited comprehensive age-sex stratified analysis across all four service categories.
+
+---
+
+**Project Impact:** This dashboard enables CARE International and health officials to identify service gaps and optimize resource allocation in conflict-affected Gaza. Understanding utilization patterns helps ensure vulnerable populations receive essential primary healthcare services.
+
+**GitHub Repository:** https://github.com/abhanam/Health_Service_Dashboard 
+
+About the Data {data-icon="fa-database"}
+=======================================================================
+
+### Data Source Information
+
+**Data Source:** CARE International - Deir Al-Balah Primary Health Care Center (PHCC), Gaza (data is confidential and provided for academic analysis).
+
+**Sample Size:** 147,430 total service encounters across four service categories (Primary Health Activity, Psychosocial Support, Health Promotion, and Nutrition services).
+
+**Data Collection:** Administrative health records collected from January 2025 through December 2025 at the Deir Al-Balah PHCC operated by CARE International during active conflict conditions.
+
+**Study Population:** Residents of Deir Al-Balah and surrounding areas in Gaza accessing primary healthcare services at the PHCC.
+
+**Time Period:** January 1, 2025 - December 31, 2025 (Note: Psychosocial support data unavailable for October-December 2025 due to service disruption).
