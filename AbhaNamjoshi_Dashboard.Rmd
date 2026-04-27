@@ -21,12 +21,27 @@ setwd("C:/Users/abhan/Work/Spring_2026/Capstone/Datasets/Clean_analysis/Data")
 # Load master data
 master_clean_data <- read.csv("master_clean_data.csv")
 
-# Ensure Month is ordered
+
+# Ensure Month is ordered and abbreviate
 master_clean_data <- master_clean_data %>%
   mutate(
-    Month = factor(Month, levels = c("January", "February", "March", "April", 
-                                     "May", "June", "July", "August", 
-                                     "September", "October", "November", "December"))
+    Month = factor(
+      case_when(
+        Month == "January" ~ "Jan",
+        Month == "February" ~ "Feb",
+        Month == "March" ~ "Mar",
+        Month == "April" ~ "Apr",
+        Month == "May" ~ "May",
+        Month == "June" ~ "Jun",
+        Month == "July" ~ "Jul",
+        Month == "August" ~ "Aug",
+        Month == "September" ~ "Sep",
+        Month == "October" ~ "Oct",
+        Month == "November" ~ "Nov",
+        Month == "December" ~ "Dec"
+      ),
+      levels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+    )
   )
 
 # Month names
@@ -134,7 +149,7 @@ plot_data <- master_clean_data %>%
   mutate(
     Service_Label = case_when(
       Service_Type == "Primary_Health_Activity" ~ "PH Monthly",
-      Service_Type == "Psychosocial" ~ "Psychosocial Support",
+      Service_Type == "Psychosocial" ~ "Psychosocial",
       Service_Type == "Health_Promotion" ~ "Health Promotion",
       Service_Type == "Nutrition" ~ "Nutrition"
     )
@@ -145,7 +160,7 @@ plot_ly(data = plot_data,
         y = ~Utilization,
         color = ~Service_Label,
         colors = c("PH Monthly" = "#FF8C00",
-                  "Psychosocial Support" = "#2E3A59",
+                  "Psychosocial" = "#2E3A59",
                   "Health Promotion" = "#7B3F8C",
                   "Nutrition" = "#C17BA3"),
         type = 'scatter',
@@ -162,7 +177,7 @@ plot_ly(data = plot_data,
     xaxis = list(
       title = list(text = "<b>Month</b>", font = list(size = 16)),
       tickfont = list(size = 14),
-      tickangle = 0
+      tickangle = -30
     ),
     yaxis = list(
       title = list(text = "<b>Number of sessions</b>", font = list(size = 16)),
